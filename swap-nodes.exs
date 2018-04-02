@@ -2,11 +2,9 @@
 # score: 40 of 40
 
 defmodule SwapNodes do
-  def create_tree(node_ids) do
-    q = node_ids |> Enum.concat |> Enum.reverse |> to_tree
-    {{:value, right}, q} = :queue.out(q)
-    {{:value, left}, _} = :queue.out(q)
-    {1, left, right}
+  def create_tree(node_id_pairs) do
+    {{:value, root}, _} = [[1] | node_id_pairs] |> Enum.concat |> Enum.reverse |> to_tree |> :queue.out
+    root
   end
 
   defp to_tree(node_ids, q \\ :queue.new)
