@@ -1,5 +1,5 @@
 // https://www.hackerrank.com/challenges/kittys-calculations-on-a-tree/problem
-// score: 54.4 / 80
+// score: 62.4 / 80
 // gcc -std=c++14 -lstdc++ -O3 -Wall kitty.cpp
 
 #include <iostream>
@@ -15,16 +15,12 @@ using namespace std;
 
 const uint64_t RESULT_MOD = 1e9 + 7;
 
+int PARENT[N_MAX + 1];
 vector<int> CHILDREN[N_MAX + 1];
 
 vector<int> ACCUMULATOR_DEPTHS[N_MAX + 1];
 vector<uint64_t> QUERY_ACCUMULATOR[N_MAX + 1];
-
-void clear(int node) {
-    for (int depth : ACCUMULATOR_DEPTHS[node])
-        QUERY_ACCUMULATOR[node][depth] = 0;
-    ACCUMULATOR_DEPTHS[node].clear();
-}
+vector<int> NON_EMPTY_CHILDREN[N_MAX + 1];
 
 void merge(int node, int child) {
     for (int depth : ACCUMULATOR_DEPTHS[child]) {
@@ -40,22 +36,24 @@ uint64_t query(int N) {
     uint64_t score = 0;
 
     for (int node = N; node >= 1; node--) {
-        for (int child : CHILDREN[node]) {
-            if (!ACCUMULATOR_DEPTHS[child].empty()) {
-                for (int node_depth : ACCUMULATOR_DEPTHS[node])
-                    for (int child_depth : ACCUMULATOR_DEPTHS[child])
-                        score = (score + QUERY_ACCUMULATOR[node][node_depth] * QUERY_ACCUMULATOR[child][child_depth] * (node_depth + child_depth - 1)) % RESULT_MOD;
+        if (NON_EMPTY_CHILDREN[node].empty())
+            continue;
+        for (int child : NON_EMPTY_CHILDREN[node]) {
+            for (int node_depth : ACCUMULATOR_DEPTHS[node])
+                for (int child_depth : ACCUMULATOR_DEPTHS[child])
+                    score = (score + QUERY_ACCUMULATOR[node][node_depth] * QUERY_ACCUMULATOR[child][child_depth] * (node_depth + child_depth + 1)) % RESULT_MOD;
+            if (node > 1)
                 merge(node, child);
-            }
+            NON_EMPTY_CHILDREN[node].clear();
         }
+        if (node > 1)
+            NON_EMPTY_CHILDREN[PARENT[node]].push_back(node);
     }
 
-    clear(1);
     return score;
 }
 
 void construct_tree(int N) {
-    int PARENT[N_MAX + 1] = {0};
     int MAX_CHILD_DEPTH[N_MAX + 1] = {0};
 
     for (int i = 1; i < N; i++) {
@@ -69,7 +67,7 @@ void construct_tree(int N) {
 
     for (int node = N; node >= 1; node--) {
         MAX_CHILD_DEPTH[PARENT[node]] = max(MAX_CHILD_DEPTH[PARENT[node]], MAX_CHILD_DEPTH[node] + 1);
-        QUERY_ACCUMULATOR[node].resize(MAX_CHILD_DEPTH[node] + 2);
+        QUERY_ACCUMULATOR[node].resize(MAX_CHILD_DEPTH[node] + 1);
     }
 }
 
@@ -84,10 +82,11 @@ int main() {
         scanf("%d", &K);
         while (K--) {
             scanf("%d", &node);
-            QUERY_ACCUMULATOR[node][1] += node;
-            ACCUMULATOR_DEPTHS[node].push_back(1);
+            QUERY_ACCUMULATOR[node][0] += node;
+            ACCUMULATOR_DEPTHS[node].push_back(0);
+            NON_EMPTY_CHILDREN[PARENT[node]].push_back(node);
         }
 
-        cout << query(N) << endl;
+        printf("%llu\n", query(N));
     }
 }
