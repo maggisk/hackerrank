@@ -1,0 +1,93 @@
+// https://www.hackerrank.com/challenges/kittys-calculations-on-a-tree/problem
+// score: 54.4 / 80
+// gcc -std=c++14 -lstdc++ -O3 -Wall kitty.cpp
+
+#include <iostream>
+#include <map>
+#include <set>
+#include <vector>
+#include <algorithm>
+#include <cinttypes>
+#include <cstring>
+using namespace std;
+
+#define N_MAX 200000
+
+const uint64_t RESULT_MOD = 1e9 + 7;
+
+vector<int> CHILDREN[N_MAX + 1];
+
+vector<int> ACCUMULATOR_DEPTHS[N_MAX + 1];
+vector<uint64_t> QUERY_ACCUMULATOR[N_MAX + 1];
+
+void clear(int node) {
+    for (int depth : ACCUMULATOR_DEPTHS[node])
+        QUERY_ACCUMULATOR[node][depth] = 0;
+    ACCUMULATOR_DEPTHS[node].clear();
+}
+
+void merge(int node, int child) {
+    for (int depth : ACCUMULATOR_DEPTHS[child]) {
+        if (QUERY_ACCUMULATOR[node][depth + 1] == 0)
+            ACCUMULATOR_DEPTHS[node].push_back(depth + 1);
+        QUERY_ACCUMULATOR[node][depth + 1] += QUERY_ACCUMULATOR[child][depth];
+        QUERY_ACCUMULATOR[child][depth] = 0;
+    }
+    ACCUMULATOR_DEPTHS[child].clear();
+}
+
+uint64_t query(int N) {
+    uint64_t score = 0;
+
+    for (int node = N; node >= 1; node--) {
+        for (int child : CHILDREN[node]) {
+            if (!ACCUMULATOR_DEPTHS[child].empty()) {
+                for (int node_depth : ACCUMULATOR_DEPTHS[node])
+                    for (int child_depth : ACCUMULATOR_DEPTHS[child])
+                        score = (score + QUERY_ACCUMULATOR[node][node_depth] * QUERY_ACCUMULATOR[child][child_depth] * (node_depth + child_depth - 1)) % RESULT_MOD;
+                merge(node, child);
+            }
+        }
+    }
+
+    clear(1);
+    return score;
+}
+
+void construct_tree(int N) {
+    int PARENT[N_MAX + 1] = {0};
+    int MAX_CHILD_DEPTH[N_MAX + 1] = {0};
+
+    for (int i = 1; i < N; i++) {
+        int a, b;
+        scanf("%d %d", &a, &b);
+        if (a > b)
+            swap(a, b);
+        CHILDREN[a].push_back(b);
+        PARENT[b] = a;
+    }
+
+    for (int node = N; node >= 1; node--) {
+        MAX_CHILD_DEPTH[PARENT[node]] = max(MAX_CHILD_DEPTH[PARENT[node]], MAX_CHILD_DEPTH[node] + 1);
+        QUERY_ACCUMULATOR[node].resize(MAX_CHILD_DEPTH[node] + 2);
+    }
+}
+
+int main() {
+    int N, Q;
+    scanf("%d %d", &N, &Q);
+
+    construct_tree(N);
+
+    while (Q--) {
+        int K, node;
+        scanf("%d", &K);
+        while (K--) {
+            scanf("%d", &node);
+            QUERY_ACCUMULATOR[node][1] += node;
+            ACCUMULATOR_DEPTHS[node].push_back(1);
+        }
+
+        cout << query(N) << endl;
+    }
+}
