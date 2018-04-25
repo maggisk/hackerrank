@@ -1,3 +1,6 @@
+# https://www.hackerrank.com/challenges/changing-bits/problem
+# score: 70 / 70
+
 def set_bit(v, index, on):
     bit = 1 << index
     return v | bit if on else v & ~bit
