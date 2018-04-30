@@ -8,8 +8,8 @@ for _ in range(int(input())):
     sorted_sums = [m]
     for v in map(int, input().split()):
         sum_here = (sum_here + v) % m
-        max_sum = max(max_sum, (m + sum_here - sorted_sums[bisect_right(sorted_sums, sum_here)]) % m)
         i = bisect_right(sorted_sums, sum_here)
+        max_sum = max(max_sum, (m + sum_here - sorted_sums[i]) % m)
         if i == 0 or sorted_sums[i - 1] != sum_here:
             sorted_sums.insert(i, sum_here)
     print(max_sum)
